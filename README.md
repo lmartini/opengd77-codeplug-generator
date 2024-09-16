@@ -15,32 +15,34 @@ This will allow you to set the "sort by distance" option on your openGD77 radio,
 The program includes Brandmeister, TGIF, ADN, and DMR+ network by default.
 
 You must have a TG list named after those default networks or the TG list in the channel will be blank and you will have trouble using it.
-S you should have the following Tg lists defined before importing the generated codeplug into your CPS:
+You should have the following Tg lists defined before importing the generated codeplug into your CPS:
 BM
 TGIF
 ADN
 DMR-PLUS
 
-Additionally if you use the -additional-networks option to select some additional regional network you must create a corresponding TG list with the same name in all capital letters.
+Additionally if you use the --additional-networks option to select some additional regional network you must create a corresponding TG list with the same name in all capital letters.
 
 codeplug_generator.py --help 
 prints  a brief self-explanatory help text. 
 
 Note that any location containing spaces must be in " quotes or escaped. 
+
 Ex: 
+
 codeplug_generator.py --channel_number 500 --states "New Hampshire",Vermont,"New York",Massachusetts,Connecticut,"New Jersey" --additional-networks NEDECN
 
 Of course you can specify "new york" as new\ york or "New york"  all the same.
 
 WARNING:
 The output of this program is only as good as the data in the radioid database!
-There are a lot of inconsistent data issues in the radioid database.
+There are a lot of inconsistent data issues in the radioid database. Check your channel frequency before transmitting.
 
-The program will print out what network it is skipping, and a summary at the end.
+The program will print out what network it is skipping, and a brief summary at the end.
 
 It will also download the map.json file form radioid.net only once every 24h.
 
-I anticipate a lot of data issues , and over time the APIs will break.
+I anticipate a lot of data issues, and over time the APIs will break.
 I will update the program as time permits.
 
 Enjoy!
