@@ -1,2 +1,6 @@
-Version 1.0
+1.0
 tested with CPS R2024.08.11.01
+1.1 
+fixed location fetching message 
+fixed csv format to match new OpenGD77CPSInstaller_R2024.09.13.02
+
