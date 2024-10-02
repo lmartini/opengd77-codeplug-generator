@@ -283,9 +283,9 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         # use radioid only
         lon, lat = lookup_record_by_id(radioid, map_data)
         
-# set user location flag
+# set use location flag
     if lat != 0 and lon != 0:
-          user_lopcation= 'yes'
+          use_location= 'Yes'
     if "bm" in network or 'brand' in network:
         tg_list = 'BM'
     else:
