@@ -171,6 +171,13 @@ def fetch_lat_long_with_selenium(repeater_id):
         # Get the values of latitude and longitude
         latitude = lat_element.get_attribute('value')
         longitude = lng_element.get_attribute('value')
+        # Validate that both latitude and longitude are numbers
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+        except ValueError:
+            # If either value is not a number, return 0, 0
+            return 0, 0
 
         return latitude, longitude
 
@@ -225,7 +232,7 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         no_location_lookup (bool): If True, location lookup is disabled (latitude and longitude will be set to 0).
         additional_networks (list): A list of additional networks to match.
     """
-
+    use_location = 'No'
     if additional_networks is None:
         additional_networks = []
 
@@ -248,7 +255,7 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
     # Skip if network does not contain 'bm', 'brand', 'tgif', 'adn', or 'dmr', 
     # and if it's not in additional networks
     if (
-        'bm' not in network and 'brand' not in network and 'tgif' not in network and 'adn' not in network and 'dmr-plus' not in network 
+        'bm' not in network and 'bran' not in network and 'tgif' not in network and 'adn' not in network and 'dmr-plus' not in network 
         and network not in [n.lower() for n in additional_networks]
     ):
         print(f"Skipping repeater due to non-matching network: {network}")
@@ -266,16 +273,19 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
     if no_location_lookup:
         lat = 0
         lon = 0
-    elif "bm" in network or 'brand' in network:    # only fetch repeater location if it is a Bm repeater
+    elif "bm" in network or 'bran' in network:    # only fetch repeater location if it is a Bm repeater
         lat, lon = fetch_lat_long_with_selenium(radioid)
         # If fetch_lat_long_with_selenium returns (0, 0), fall back to lookup_record_by_id
         if lat == 0 and lon == 0:
-            print(f"Warning: fetch_lat_long_with_selenium returned (0, 0) for radioid {radioid}. Falling back to lookup_record_by_id.")
+            print(f"Warning: fetch_lat_long_with_selenium returned (0, 0) for radioid {radioid}. Channel Name {channel_name} Falling back to lookup_record_by_id.")
             lon, lat = lookup_record_by_id(radioid, map_data)
     else:
-        # use radioid
+        # use radioid only
         lon, lat = lookup_record_by_id(radioid, map_data)
-
+        
+# set user location flag
+    if lat != 0 and lon != 0:
+          user_lopcation= 'yes'
     if "bm" in network or 'brand' in network:
         tg_list = 'BM'
     else:
@@ -308,7 +318,9 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         'No Eco': 'No',  # Placeholder
         'APRS': 'None',  # Placeholder
         'Latitude': lat,  
-        'Longitude': lon
+        'Longitude': lon,
+        'Roaming': 'No',  # Placeholder
+        'Use location': use_location
     }
 
 
