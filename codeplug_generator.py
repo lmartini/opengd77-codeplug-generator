@@ -233,6 +233,7 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         additional_networks (list): A list of additional networks to match.
     """
     use_location = 'No'
+    roaming = 'No'
     if additional_networks is None:
         additional_networks = []
 
@@ -286,6 +287,8 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
 # set use location flag
     if lat != 0 and lon != 0:
           use_location= 'Yes'
+          # temp fix for broken CPS
+          roaming = 'No'
     if "bm" in network or 'brand' in network:
         tg_list = 'BM'
     else:
@@ -319,7 +322,7 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         'APRS': 'None',  # Placeholder
         'Latitude': lat,  
         'Longitude': lon,
-        'Roaming': 'No',  # Placeholder
+        'Roaming': roaming,  # Placeholder
         'Use location': use_location
     }
 
