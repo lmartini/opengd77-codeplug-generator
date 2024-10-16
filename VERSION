@@ -5,3 +5,7 @@ fixed location fetching message
 fixed csv format to match new OpenGD77CPSInstaller_R2024.09.13.02
 1.2
 updated csv to support CSV R2024.10.01.01
+1.3
+updated to supoort CSV format for R2024.10.07.01 of CPS
+added tx frequency check to avoid channels out of ham band
+added a few other data integrity checks.
