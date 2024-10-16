@@ -322,7 +322,7 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         'APRS': 'None',  # Placeholder
         'Latitude': lat,  
         'Longitude': lon,
-        'Roaming': roaming,  # Placeholder
+#        'Roaming': roaming,  # Placeholder
         'Use location': use_location
     }
 
