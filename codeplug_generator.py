@@ -223,6 +223,24 @@ def get_unique_channel_name(base_name):
     used_channel_names.add(unique_name)
     return unique_name
 
+def ham_band_check(frequency):
+    # Define the frequency ranges for US amateur radio bands
+    freq_2m_min, freq_2m_max = 144.0, 148.0
+    freq_225m_min, freq_225m_max = 219.0, 225.0
+    freq_70cm_min, freq_70cm_max = 420.0, 450.0
+    # Try to convert the frequency to float
+    try:
+        frequency = float(frequency)
+    except ValueError:
+        print(f"Warning: Invalid frequency value '{frequency}'. Unable to check band.")
+        return False
+    # Check if the tx_frequency is within any of the defined ranges
+    return (
+        freq_2m_min <= frequency <= freq_2m_max or
+        freq_225m_min <= frequency <= freq_225m_max or
+        freq_70cm_min <= frequency <= freq_70cm_max
+    )
+
 def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, additional_networks=None):
     """
     Map repeater data to CSV format and optionally perform location lookup.
@@ -253,7 +271,11 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         network = ''
     else:
         network = network.lower()
-    # Skip if network does not contain 'bm', 'brand', 'tgif', 'adn', or 'dmr', 
+    #skip broken records outside the ham band
+    if not ham_band_check(tx_frequency):
+        print(f"Warning: tx frequency {tx_frequency} MHz for repeater {channel_name} is not within the 2m, 2.25m, or 70cm amateur radio bands. Dropping record.")
+        return None
+    # Skip if network does not contain 'bm', 'bran', 'tgif', 'adn', or 'dmr', 
     # and if it's not in additional networks
     if (
         'bm' not in network and 'bran' not in network and 'tgif' not in network and 'adn' not in network and 'dmr-plus' not in network 
@@ -278,7 +300,7 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         lat, lon = fetch_lat_long_with_selenium(radioid)
         # If fetch_lat_long_with_selenium returns (0, 0), fall back to lookup_record_by_id
         if lat == 0 and lon == 0:
-            print(f"Warning: fetch_lat_long_with_selenium returned (0, 0) for radioid {radioid}. Channel Name {channel_name} Falling back to lookup_record_by_id.")
+            print(f"Warning: no location info found in BM servers for radioid {radioid}. Channel Name {channel_name} trying raioid map.")
             lon, lat = lookup_record_by_id(radioid, map_data)
     else:
         # use radioid only
