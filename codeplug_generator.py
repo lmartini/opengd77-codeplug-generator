@@ -18,23 +18,15 @@ import argparse
 import requests
 import pandas as pd
 import csv
-import json  # Add this line to import the JSON module
+import json
 import sys
 import os
 import time
-
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchDriverException, WebDriverException
 from collections import defaultdict
 # Keep track of used channel names to ensure uniqueness
 # Declare the global variable to store channel names per state
 channels_by_state = defaultdict(list)
 channels_by_network = defaultdict(list)
-# map_data = None
-
 # Initialize the used_channel_names set globally
 used_channel_names = set()
 
@@ -145,52 +137,37 @@ def write_zone_to_csv(output_file, max_channels=180):
 
     print(f"Zones by state have been written to {output_file}")
     
-def fetch_lat_long_with_selenium(repeater_id):
-    # Set up Chrome options with performance optimizations
-    driver = None
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Enable headless mode
-    chrome_options.add_argument('--no-sandbox')  # Useful in some Linux environments
-    chrome_options.add_argument('--disable-dev-shm-usage')  # For limited resource problems
-    chrome_options.add_argument('--disable-gpu')  # Headless mode doesn't need GPU
-    
-    # Path to ChromeDriver on your system
-    service = Service('/usr/bin/chromedriver')
-    
-    # Initialize the Chrome WebDriver with the Service object and options
+def fetch_lat_long_with_api(repeater_id):
     try:
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        # Construct the URL for the given Radio ID
-        url = f"https://brandmeister.network/?page=device-edit&id={repeater_id}"
-        # Open the page
-        driver.get(url)
-        # Find the latitude and longitude elements by their ID or name
-        lat_element = driver.find_element(By.NAME, 'lat')
-        lng_element = driver.find_element(By.NAME, 'lng')
-        
-        # Get the values of latitude and longitude
-        latitude = lat_element.get_attribute('value')
-        longitude = lng_element.get_attribute('value')
+        # Construct the URL for the given repeater ID
+        url = f"https://api.brandmeister.network/v2/device/{repeater_id}"
+
+        # Send an HTTP GET request to the API
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        # Parse the JSON response
+        data = response.json()
+
+        # Extract latitude and longitude
+        latitude = data.get('lat', 0)
+        longitude = data.get('lng', 0)
+
         # Validate that both latitude and longitude are numbers
-        try:
-            latitude = float(latitude)
-            longitude = float(longitude)
-        except ValueError:
-            # If either value is not a number, return 0, 0
+        if latitude is None or longitude is None:
+            logging.warning(f"Latitude or longitude is Invalid for id='{repeater_id}'")
             return 0, 0
-        
+        latitude = float(latitude)
+        longitude = float(longitude)
+        # Check for zero values and log if found
+        if latitude == 0.0 and longitude == 0.0:
+            logging.warning(f"Latitude and longitude are (0.000000, 0.000000) for id='{repeater_id}'")
+            return 0, 0
         return latitude, longitude
 
-    except (NoSuchDriverException, WebDriverException) as e:
-        logging.error(f"Error with Selenium WebDriver for id='{repeater_id}': {e}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"HTTP request error for id='{repeater_id}': {e}")
         return 0, 0
-
-    finally:
-        # Close the browser if it was initialized
-        try:
-            driver.quit()
-        except Exception as cleanup_error:
-            logging.error(f"Error closing WebDriver for id='{repeater_id}': {cleanup_error}")
 
 # Function to calculate Tx Frequency based on Rx Frequency and Offset
 def calculate_tx_frequency(rx_frequency, offset):
@@ -300,8 +277,8 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         lat = 0
         lon = 0
     elif "bm" in network or 'bran' in network:    # only fetch repeater location if it is a Bm repeater
-        lat, lon = fetch_lat_long_with_selenium(radioid)
-        # If fetch_lat_long_with_selenium returns (0, 0), fall back to lookup_record_by_id
+        lat, lon = fetch_lat_long_with_api(radioid)
+        # If fetch_lat_long_with_api returns (0, 0), fall back to lookup_record_by_id
         if lat == 0 and lon == 0:
             print(f"Warning: no location info found in BM servers for radioid {radioid}. Channel Name {channel_name} trying raioid map.")
             lon, lat = lookup_record_by_id(radioid, map_data)
