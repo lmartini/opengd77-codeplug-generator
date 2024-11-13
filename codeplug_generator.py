@@ -13,6 +13,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Copyright (C) 2024 Luca Martini
+import logging
 import argparse
 import requests
 import pandas as pd
@@ -26,6 +27,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import NoSuchDriverException, WebDriverException
 from collections import defaultdict
 # Keep track of used channel names to ensure uniqueness
 # Declare the global variable to store channel names per state
@@ -145,29 +147,27 @@ def write_zone_to_csv(output_file, max_channels=180):
     
 def fetch_lat_long_with_selenium(repeater_id):
     # Set up Chrome options with performance optimizations
+    driver = None
     chrome_options = Options()
     chrome_options.add_argument('--headless')  # Enable headless mode
     chrome_options.add_argument('--no-sandbox')  # Useful in some Linux environments
     chrome_options.add_argument('--disable-dev-shm-usage')  # For limited resource problems
     chrome_options.add_argument('--disable-gpu')  # Headless mode doesn't need GPU
-
+    
     # Path to ChromeDriver on your system
-    service = Service('/usr/lib64/chromium-browser/chromedriver')
-
+    service = Service('/usr/bin/chromedriver')
+    
     # Initialize the Chrome WebDriver with the Service object and options
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
     try:
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         # Construct the URL for the given Radio ID
         url = f"https://brandmeister.network/?page=device-edit&id={repeater_id}"
-        
         # Open the page
         driver.get(url)
-        
         # Find the latitude and longitude elements by their ID or name
         lat_element = driver.find_element(By.NAME, 'lat')
         lng_element = driver.find_element(By.NAME, 'lng')
-
+        
         # Get the values of latitude and longitude
         latitude = lat_element.get_attribute('value')
         longitude = lng_element.get_attribute('value')
@@ -178,16 +178,19 @@ def fetch_lat_long_with_selenium(repeater_id):
         except ValueError:
             # If either value is not a number, return 0, 0
             return 0, 0
-
+        
         return latitude, longitude
 
-    except Exception as e:
-        print(f"Error occurred: {e}")
-        return None, None
+    except (NoSuchDriverException, WebDriverException) as e:
+        logging.error(f"Error with Selenium WebDriver for id='{repeater_id}': {e}")
+        return 0, 0
 
     finally:
-        # Close the browser
-        driver.quit()
+        # Close the browser if it was initialized
+        try:
+            driver.quit()
+        except Exception as cleanup_error:
+            logging.error(f"Error closing WebDriver for id='{repeater_id}': {cleanup_error}")
 
 # Function to calculate Tx Frequency based on Rx Frequency and Offset
 def calculate_tx_frequency(rx_frequency, offset):
@@ -344,7 +347,6 @@ def map_repeater_to_csv(repeater, map_data=None, no_location_lookup=False, addit
         'APRS': 'None',  # Placeholder
         'Latitude': lat,  
         'Longitude': lon,
-#        'Roaming': roaming,  # Placeholder
         'Use location': use_location
     }
 
