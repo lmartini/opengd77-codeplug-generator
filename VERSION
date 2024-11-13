@@ -9,3 +9,6 @@ updated csv to support CSV R2024.10.01.01
 updated to supoort CSV format for R2024.10.07.01 of CPS
 added tx frequency check to avoid channels out of ham band
 added a few other data integrity checks.
+1.4
+replaced web page scrubbing with BM API call
+Major speed increase - no need for chrome anymore
